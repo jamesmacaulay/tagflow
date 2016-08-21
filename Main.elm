@@ -1,9 +1,17 @@
 module Main exposing (..)
 
 import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Navigation
 import String
 import Regex exposing (Regex, HowMany(All, AtMost), regex)
+
+
+config =
+    { clientId = "06f0e80490044ad993f6cb6fd79e1149"
+    , redirectUri = "http://localhost:8000/Main.elm"
+    }
 
 
 main =
@@ -67,7 +75,7 @@ urlUpdate route model =
             )
 
         TagRoute tag ->
-            ( { model | tag = Just tag }
+            ( { model | tag = Just tag, tagInput = "" }
             , Cmd.none
             )
 
@@ -81,13 +89,14 @@ urlUpdate route model =
 
 type alias Model =
     { tag : Maybe String
+    , tagInput : String
     , accessToken : Maybe String
     }
 
 
 empty : Model
 empty =
-    Model Nothing Nothing
+    Model Nothing "" Nothing
 
 
 init : Route -> (Model, Cmd Msg)
@@ -98,20 +107,69 @@ init route =
 -- UPDATE
 
 
-type alias Msg = Never
+type Msg
+    = TagInput String
+    | Submit
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
-update _ model =
-    ( model , Cmd.none )
+update msg model =
+    case msg of
+        TagInput str ->
+            ( { model | tagInput = str }
+            , Cmd.none
+            )
+
+        Submit ->
+            ( model
+            , Navigation.newUrl ("#" ++ model.tagInput)
+            )
 
 
 -- VIEW
 
 
+authUrl : String -> String -> String
+authUrl clientId redirectUri =
+    "https://api.instagram.com/oauth/authorize/?client_id=" ++ clientId ++
+    "&redirect_uri=" ++ redirectUri ++
+    "&response_type=token"
+
+
+loginView : Html Msg
+loginView =
+    div
+        []
+        [ a
+            [ href (authUrl config.clientId config.redirectUri) ]
+            [ text "log in"]
+        ]
+
+tagInputView : Html Msg
+tagInputView =
+    Html.form
+        [ onSubmit Submit ]
+        [ input
+            [ onInput TagInput ]
+            [ ]
+        ]
+
 view : Model -> Html Msg
-view model =
-    model |> toString |> text
+view ({tag, accessToken} as model) =
+    case accessToken of
+        Nothing ->
+            loginView
+
+        Just token ->
+            case tag of
+                Nothing ->
+                    tagInputView
+
+                Just tag ->
+                    model |> toString |> text
+
+
+
 
 
 -- SUBSCRIPTIONS
