@@ -70,29 +70,38 @@ urlUpdate : Route -> Model -> (Model, Cmd Msg)
 urlUpdate route model =
     case route of
         HomeRoute ->
-            ( { model | tag = Nothing }
+            ( { model | slideshow = Nothing }
             , Cmd.none
             )
 
         TagRoute tag ->
-            ( { model | tag = Just tag, tagInput = "" }
+            ( { model | slideshow = Just (slideshow tag), tagInput = "" }
             , Cmd.none
             )
 
         AccessTokenRoute token ->
             ( { model | accessToken = Just token }
-            , Cmd.none
+            , Navigation.newUrl "#"
             )
 
 
 -- MODEL
 
+type alias Slideshow =
+    { tag : String
+    , imageUrls : List String
+    }
+
 type alias Model =
-    { tag : Maybe String
+    { slideshow : Maybe Slideshow
     , tagInput : String
     , accessToken : Maybe String
     }
 
+
+slideshow : String -> Slideshow
+slideshow tag =
+    Slideshow tag []
 
 empty : Model
 empty =
@@ -145,31 +154,28 @@ loginView =
             [ text "log in"]
         ]
 
-tagInputView : Html Msg
-tagInputView =
+tagInputView : Model -> Html Msg
+tagInputView {tagInput} =
     Html.form
         [ onSubmit Submit ]
         [ input
             [ onInput TagInput ]
-            [ ]
+            [ text tagInput ]
         ]
 
 view : Model -> Html Msg
-view ({tag, accessToken} as model) =
-    case accessToken of
+view model =
+    case model.accessToken of
         Nothing ->
             loginView
 
         Just token ->
-            case tag of
+            case model.slideshow of
                 Nothing ->
-                    tagInputView
+                    tagInputView model
 
-                Just tag ->
+                Just slideshow ->
                     model |> toString |> text
-
-
-
 
 
 -- SUBSCRIPTIONS
