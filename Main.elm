@@ -6,8 +6,10 @@ import Html.Events exposing (..)
 import Navigation
 import String
 import Regex exposing (Regex, HowMany(All, AtMost), regex)
-import Json.Decode
+import Http
+import Json.Decode as Json exposing (Decoder, (:=))
 import Jsonp
+import Task exposing (Task)
 
 
 config =
@@ -17,14 +19,50 @@ config =
 
 
 main =
-    Navigation.program
-        urlParser
+    Navigation.program urlParser
         { init = init
         , update = update
         , urlUpdate = urlUpdate
-        , view = view
+        , view = Jsonp.wrapView .jsonpState view
         , subscriptions = subscriptions
         }
+
+
+
+-- JSON
+
+
+type Media
+    = Image String
+    | Video String
+
+
+imageDecoder : Decoder Media
+imageDecoder =
+    Json.at [ "images", "standard_resolution", "url" ] (Json.map Image Json.string)
+
+
+videoDecoder : Decoder Media
+videoDecoder =
+    Json.at [ "videos", "standard_resolution", "url" ] (Json.map Video Json.string)
+
+
+mediaDecoder : Decoder Media
+mediaDecoder =
+    Json.oneOf [ videoDecoder, imageDecoder ]
+
+
+responseDecoder : Decoder (List Media)
+responseDecoder =
+    "data" := Json.list mediaDecoder
+
+
+recentTaggedMediaUrl : String -> String -> String
+recentTaggedMediaUrl accessToken tag =
+    "https://api.instagram.com/v1/tags/"
+        ++ tag
+        ++ "/media/recent?access_token="
+        ++ accessToken
 
 
 
@@ -42,8 +80,7 @@ accessTokenFromHash hash =
     hash
         |> Regex.find All (regex "^#access_token=(.*)")
         |> List.head
-        |> (flip Maybe.andThen)
-            (.submatches >> List.head >> Maybe.withDefault Nothing)
+        |> (flip Maybe.andThen) (.submatches >> List.head >> Maybe.withDefault Nothing)
 
 
 tagFromHash : String -> String
@@ -78,9 +115,18 @@ urlUpdate route model =
             )
 
         TagRoute tag ->
-            ( { model | slideshow = Just (slideshow tag), tagInput = "" }
-            , Cmd.none
-            )
+            case model.accessToken of
+                Nothing ->
+                    ( model, Navigation.newUrl "#" )
+
+                Just accessToken ->
+                    ( { model
+                        | slideshow = Just (slideshow tag)
+                        , tagInput = ""
+                        , jsonpState = Jsonp.request (recentTaggedMediaUrl accessToken tag) model.jsonpState
+                      }
+                    , Cmd.none
+                    )
 
         AccessTokenRoute token ->
             ( { model | accessToken = Just token }
@@ -94,7 +140,7 @@ urlUpdate route model =
 
 type alias Slideshow =
     { tag : String
-    , imageUrls : List String
+    , media : List Media
     }
 
 
@@ -132,7 +178,7 @@ init route =
 type Msg
     = TagInput String
     | Submit
-    | ReceiveResponse Json.Decode.Value
+    | ReceiveResponse Json.Value
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -149,16 +195,21 @@ update msg model =
             )
 
         ReceiveResponse jsonValue ->
-            ( { model
-                | slideshow =
-                    model.slideshow
-                        |> Maybe.map
-                            (\slideshow ->
-                                slideshow
-                            )
-              }
-            , Cmd.none
-            )
+            case Json.decodeValue responseDecoder jsonValue of
+                Err e ->
+                    ( empty, Navigation.newUrl "#" )
+
+                Ok mediaList ->
+                    ( { model
+                        | slideshow =
+                            Maybe.map
+                                (\s ->
+                                    { s | media = mediaList }
+                                )
+                                model.slideshow
+                      }
+                    , Cmd.none
+                    )
 
 
 
@@ -178,22 +229,16 @@ authUrl clientId redirectUri =
 
 loginView : Html Msg
 loginView =
-    div
-        []
-        [ a
-            [ href (authUrl config.clientId config.redirectUri) ]
+    div []
+        [ a [ href (authUrl config.clientId config.redirectUri) ]
             [ text "log in" ]
         ]
 
 
 tagInputView : Model -> Html Msg
 tagInputView { tagInput } =
-    Html.form
-        [ onSubmit Submit ]
-        [ input
-            [ onInput TagInput ]
-            [ text tagInput ]
-        ]
+    Html.form [ onSubmit Submit ]
+        [ input [ onInput TagInput ] [ text tagInput ] ]
 
 
 view : Model -> Html Msg

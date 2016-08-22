@@ -9011,6 +9011,364 @@ var _elm_lang$navigation$Navigation$subMap = F2(
 	});
 _elm_lang$core$Native_Platform.effectManagers['Navigation'] = {pkg: 'elm-lang/navigation', init: _elm_lang$navigation$Navigation$init, onEffects: _elm_lang$navigation$Navigation$onEffects, onSelfMsg: _elm_lang$navigation$Navigation$onSelfMsg, tag: 'fx', cmdMap: _elm_lang$navigation$Navigation$cmdMap, subMap: _elm_lang$navigation$Navigation$subMap};
 
+//import Dict, List, Maybe, Native.Scheduler //
+
+var _evancz$elm_http$Native_Http = function() {
+
+function send(settings, request)
+{
+	return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+		var req = new XMLHttpRequest();
+
+		// start
+		if (settings.onStart.ctor === 'Just')
+		{
+			req.addEventListener('loadStart', function() {
+				var task = settings.onStart._0;
+				_elm_lang$core$Native_Scheduler.rawSpawn(task);
+			});
+		}
+
+		// progress
+		if (settings.onProgress.ctor === 'Just')
+		{
+			req.addEventListener('progress', function(event) {
+				var progress = !event.lengthComputable
+					? _elm_lang$core$Maybe$Nothing
+					: _elm_lang$core$Maybe$Just({
+						loaded: event.loaded,
+						total: event.total
+					});
+				var task = settings.onProgress._0(progress);
+				_elm_lang$core$Native_Scheduler.rawSpawn(task);
+			});
+		}
+
+		// end
+		req.addEventListener('error', function() {
+			return callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'RawNetworkError' }));
+		});
+
+		req.addEventListener('timeout', function() {
+			return callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'RawTimeout' }));
+		});
+
+		req.addEventListener('load', function() {
+			return callback(_elm_lang$core$Native_Scheduler.succeed(toResponse(req)));
+		});
+
+		req.open(request.verb, request.url, true);
+
+		// set all the headers
+		function setHeader(pair) {
+			req.setRequestHeader(pair._0, pair._1);
+		}
+		A2(_elm_lang$core$List$map, setHeader, request.headers);
+
+		// set the timeout
+		req.timeout = settings.timeout;
+
+		// enable this withCredentials thing
+		req.withCredentials = settings.withCredentials;
+
+		// ask for a specific MIME type for the response
+		if (settings.desiredResponseType.ctor === 'Just')
+		{
+			req.overrideMimeType(settings.desiredResponseType._0);
+		}
+
+		// actuall send the request
+		if(request.body.ctor === "BodyFormData")
+		{
+			req.send(request.body.formData)
+		}
+		else
+		{
+			req.send(request.body._0);
+		}
+
+		return function() {
+			req.abort();
+		};
+	});
+}
+
+
+// deal with responses
+
+function toResponse(req)
+{
+	var tag = req.responseType === 'blob' ? 'Blob' : 'Text'
+	var response = tag === 'Blob' ? req.response : req.responseText;
+	return {
+		status: req.status,
+		statusText: req.statusText,
+		headers: parseHeaders(req.getAllResponseHeaders()),
+		url: req.responseURL,
+		value: { ctor: tag, _0: response }
+	};
+}
+
+
+function parseHeaders(rawHeaders)
+{
+	var headers = _elm_lang$core$Dict$empty;
+
+	if (!rawHeaders)
+	{
+		return headers;
+	}
+
+	var headerPairs = rawHeaders.split('\u000d\u000a');
+	for (var i = headerPairs.length; i--; )
+	{
+		var headerPair = headerPairs[i];
+		var index = headerPair.indexOf('\u003a\u0020');
+		if (index > 0)
+		{
+			var key = headerPair.substring(0, index);
+			var value = headerPair.substring(index + 2);
+
+			headers = A3(_elm_lang$core$Dict$update, key, function(oldValue) {
+				if (oldValue.ctor === 'Just')
+				{
+					return _elm_lang$core$Maybe$Just(value + ', ' + oldValue._0);
+				}
+				return _elm_lang$core$Maybe$Just(value);
+			}, headers);
+		}
+	}
+
+	return headers;
+}
+
+
+function multipart(dataList)
+{
+	var formData = new FormData();
+
+	while (dataList.ctor !== '[]')
+	{
+		var data = dataList._0;
+		if (data.ctor === 'StringData')
+		{
+			formData.append(data._0, data._1);
+		}
+		else
+		{
+			var fileName = data._1.ctor === 'Nothing'
+				? undefined
+				: data._1._0;
+			formData.append(data._0, data._2, fileName);
+		}
+		dataList = dataList._1;
+	}
+
+	return { ctor: 'BodyFormData', formData: formData };
+}
+
+
+function uriEncode(string)
+{
+	return encodeURIComponent(string);
+}
+
+function uriDecode(string)
+{
+	return decodeURIComponent(string);
+}
+
+return {
+	send: F2(send),
+	multipart: multipart,
+	uriEncode: uriEncode,
+	uriDecode: uriDecode
+};
+
+}();
+
+var _evancz$elm_http$Http$send = _evancz$elm_http$Native_Http.send;
+var _evancz$elm_http$Http$defaultSettings = {timeout: 0, onStart: _elm_lang$core$Maybe$Nothing, onProgress: _elm_lang$core$Maybe$Nothing, desiredResponseType: _elm_lang$core$Maybe$Nothing, withCredentials: false};
+var _evancz$elm_http$Http$multipart = _evancz$elm_http$Native_Http.multipart;
+var _evancz$elm_http$Http$uriDecode = _evancz$elm_http$Native_Http.uriDecode;
+var _evancz$elm_http$Http$uriEncode = _evancz$elm_http$Native_Http.uriEncode;
+var _evancz$elm_http$Http$queryEscape = function (string) {
+	return A2(
+		_elm_lang$core$String$join,
+		'+',
+		A2(
+			_elm_lang$core$String$split,
+			'%20',
+			_evancz$elm_http$Http$uriEncode(string)));
+};
+var _evancz$elm_http$Http$queryPair = function (_p0) {
+	var _p1 = _p0;
+	return A2(
+		_elm_lang$core$Basics_ops['++'],
+		_evancz$elm_http$Http$queryEscape(_p1._0),
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			'=',
+			_evancz$elm_http$Http$queryEscape(_p1._1)));
+};
+var _evancz$elm_http$Http$url = F2(
+	function (baseUrl, args) {
+		var _p2 = args;
+		if (_p2.ctor === '[]') {
+			return baseUrl;
+		} else {
+			return A2(
+				_elm_lang$core$Basics_ops['++'],
+				baseUrl,
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					'?',
+					A2(
+						_elm_lang$core$String$join,
+						'&',
+						A2(_elm_lang$core$List$map, _evancz$elm_http$Http$queryPair, args))));
+		}
+	});
+var _evancz$elm_http$Http$Request = F4(
+	function (a, b, c, d) {
+		return {verb: a, headers: b, url: c, body: d};
+	});
+var _evancz$elm_http$Http$Settings = F5(
+	function (a, b, c, d, e) {
+		return {timeout: a, onStart: b, onProgress: c, desiredResponseType: d, withCredentials: e};
+	});
+var _evancz$elm_http$Http$Response = F5(
+	function (a, b, c, d, e) {
+		return {status: a, statusText: b, headers: c, url: d, value: e};
+	});
+var _evancz$elm_http$Http$TODO_implement_blob_in_another_library = {ctor: 'TODO_implement_blob_in_another_library'};
+var _evancz$elm_http$Http$TODO_implement_file_in_another_library = {ctor: 'TODO_implement_file_in_another_library'};
+var _evancz$elm_http$Http$BodyBlob = function (a) {
+	return {ctor: 'BodyBlob', _0: a};
+};
+var _evancz$elm_http$Http$BodyFormData = {ctor: 'BodyFormData'};
+var _evancz$elm_http$Http$ArrayBuffer = {ctor: 'ArrayBuffer'};
+var _evancz$elm_http$Http$BodyString = function (a) {
+	return {ctor: 'BodyString', _0: a};
+};
+var _evancz$elm_http$Http$string = _evancz$elm_http$Http$BodyString;
+var _evancz$elm_http$Http$Empty = {ctor: 'Empty'};
+var _evancz$elm_http$Http$empty = _evancz$elm_http$Http$Empty;
+var _evancz$elm_http$Http$FileData = F3(
+	function (a, b, c) {
+		return {ctor: 'FileData', _0: a, _1: b, _2: c};
+	});
+var _evancz$elm_http$Http$BlobData = F3(
+	function (a, b, c) {
+		return {ctor: 'BlobData', _0: a, _1: b, _2: c};
+	});
+var _evancz$elm_http$Http$blobData = _evancz$elm_http$Http$BlobData;
+var _evancz$elm_http$Http$StringData = F2(
+	function (a, b) {
+		return {ctor: 'StringData', _0: a, _1: b};
+	});
+var _evancz$elm_http$Http$stringData = _evancz$elm_http$Http$StringData;
+var _evancz$elm_http$Http$Blob = function (a) {
+	return {ctor: 'Blob', _0: a};
+};
+var _evancz$elm_http$Http$Text = function (a) {
+	return {ctor: 'Text', _0: a};
+};
+var _evancz$elm_http$Http$RawNetworkError = {ctor: 'RawNetworkError'};
+var _evancz$elm_http$Http$RawTimeout = {ctor: 'RawTimeout'};
+var _evancz$elm_http$Http$BadResponse = F2(
+	function (a, b) {
+		return {ctor: 'BadResponse', _0: a, _1: b};
+	});
+var _evancz$elm_http$Http$UnexpectedPayload = function (a) {
+	return {ctor: 'UnexpectedPayload', _0: a};
+};
+var _evancz$elm_http$Http$handleResponse = F2(
+	function (handle, response) {
+		if ((_elm_lang$core$Native_Utils.cmp(200, response.status) < 1) && (_elm_lang$core$Native_Utils.cmp(response.status, 300) < 0)) {
+			var _p3 = response.value;
+			if (_p3.ctor === 'Text') {
+				return handle(_p3._0);
+			} else {
+				return _elm_lang$core$Task$fail(
+					_evancz$elm_http$Http$UnexpectedPayload('Response body is a blob, expecting a string.'));
+			}
+		} else {
+			return _elm_lang$core$Task$fail(
+				A2(_evancz$elm_http$Http$BadResponse, response.status, response.statusText));
+		}
+	});
+var _evancz$elm_http$Http$NetworkError = {ctor: 'NetworkError'};
+var _evancz$elm_http$Http$Timeout = {ctor: 'Timeout'};
+var _evancz$elm_http$Http$promoteError = function (rawError) {
+	var _p4 = rawError;
+	if (_p4.ctor === 'RawTimeout') {
+		return _evancz$elm_http$Http$Timeout;
+	} else {
+		return _evancz$elm_http$Http$NetworkError;
+	}
+};
+var _evancz$elm_http$Http$getString = function (url) {
+	var request = {
+		verb: 'GET',
+		headers: _elm_lang$core$Native_List.fromArray(
+			[]),
+		url: url,
+		body: _evancz$elm_http$Http$empty
+	};
+	return A2(
+		_elm_lang$core$Task$andThen,
+		A2(
+			_elm_lang$core$Task$mapError,
+			_evancz$elm_http$Http$promoteError,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request)),
+		_evancz$elm_http$Http$handleResponse(_elm_lang$core$Task$succeed));
+};
+var _evancz$elm_http$Http$fromJson = F2(
+	function (decoder, response) {
+		var decode = function (str) {
+			var _p5 = A2(_elm_lang$core$Json_Decode$decodeString, decoder, str);
+			if (_p5.ctor === 'Ok') {
+				return _elm_lang$core$Task$succeed(_p5._0);
+			} else {
+				return _elm_lang$core$Task$fail(
+					_evancz$elm_http$Http$UnexpectedPayload(_p5._0));
+			}
+		};
+		return A2(
+			_elm_lang$core$Task$andThen,
+			A2(_elm_lang$core$Task$mapError, _evancz$elm_http$Http$promoteError, response),
+			_evancz$elm_http$Http$handleResponse(decode));
+	});
+var _evancz$elm_http$Http$get = F2(
+	function (decoder, url) {
+		var request = {
+			verb: 'GET',
+			headers: _elm_lang$core$Native_List.fromArray(
+				[]),
+			url: url,
+			body: _evancz$elm_http$Http$empty
+		};
+		return A2(
+			_evancz$elm_http$Http$fromJson,
+			decoder,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
+	});
+var _evancz$elm_http$Http$post = F3(
+	function (decoder, url, body) {
+		var request = {
+			verb: 'POST',
+			headers: _elm_lang$core$Native_List.fromArray(
+				[]),
+			url: url,
+			body: body
+		};
+		return A2(
+			_evancz$elm_http$Http$fromJson,
+			decoder,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
+	});
+
 var _jamesmacaulay$tagflow$Jsonp$appendQueryToUrl = F2(
 	function (url, query) {
 		var separator = A2(_elm_lang$core$String$contains, '?', url) ? '&' : '?';
@@ -9085,7 +9443,7 @@ var _jamesmacaulay$tagflow$Jsonp$request = F2(
 	function (url, _p5) {
 		var _p6 = _p5;
 		var id = _p6._0.lastId + 1;
-		var urlWithCallback = A2(_jamesmacaulay$tagflow$Jsonp$appendQueryToUrl, url, 'callback=app.ports.jsonpResponses');
+		var urlWithCallback = A2(_jamesmacaulay$tagflow$Jsonp$appendQueryToUrl, url, 'callback=app.ports.jsonpResponses.send');
 		var newScript = {id: id, url: urlWithCallback};
 		return _jamesmacaulay$tagflow$Jsonp$State(
 			{
@@ -9114,42 +9472,6 @@ var _jamesmacaulay$tagflow$Main$authUrl = F2(
 							redirectUri,
 							A2(_elm_lang$core$Basics_ops['++'], '&response_type=token', '&scope=public_content'))))));
 	});
-var _jamesmacaulay$tagflow$Main$update = F2(
-	function (msg, model) {
-		var _p0 = msg;
-		switch (_p0.ctor) {
-			case 'TagInput':
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{tagInput: _p0._0}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			case 'Submit':
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: _elm_lang$navigation$Navigation$newUrl(
-						A2(_elm_lang$core$Basics_ops['++'], '#', model.tagInput))
-				};
-			default:
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							slideshow: A2(
-								_elm_lang$core$Maybe$map,
-								function (slideshow) {
-									return slideshow;
-								},
-								model.slideshow)
-						}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-		}
-	});
 var _jamesmacaulay$tagflow$Main$empty = {slideshow: _elm_lang$core$Maybe$Nothing, tagInput: '', accessToken: _elm_lang$core$Maybe$Nothing, jsonpState: _jamesmacaulay$tagflow$Jsonp$emptyState};
 var _jamesmacaulay$tagflow$Main$tagFromHash = A3(
 	_elm_lang$core$Regex$replace,
@@ -9160,14 +9482,14 @@ var _jamesmacaulay$tagflow$Main$accessTokenFromHash = function (hash) {
 	return A3(
 		_elm_lang$core$Basics$flip,
 		_elm_lang$core$Maybe$andThen,
-		function (_p1) {
+		function (_p0) {
 			return A2(
 				_elm_lang$core$Maybe$withDefault,
 				_elm_lang$core$Maybe$Nothing,
 				_elm_lang$core$List$head(
 					function (_) {
 						return _.submatches;
-					}(_p1)));
+					}(_p0)));
 		},
 		_elm_lang$core$List$head(
 			A3(
@@ -9176,6 +9498,16 @@ var _jamesmacaulay$tagflow$Main$accessTokenFromHash = function (hash) {
 				_elm_lang$core$Regex$regex('^#access_token=(.*)'),
 				hash)));
 };
+var _jamesmacaulay$tagflow$Main$recentTaggedMediaUrl = F2(
+	function (accessToken, tag) {
+		return A2(
+			_elm_lang$core$Basics_ops['++'],
+			'https://api.instagram.com/v1/tags/',
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				tag,
+				A2(_elm_lang$core$Basics_ops['++'], '/media/recent?access_token=', accessToken)));
+	});
 var _jamesmacaulay$tagflow$Main$config = {clientId: '06f0e80490044ad993f6cb6fd79e1149', redirectUri: 'http://localhost:8000/'};
 var _jamesmacaulay$tagflow$Main$loginView = A2(
 	_elm_lang$html$Html$div,
@@ -9197,7 +9529,7 @@ var _jamesmacaulay$tagflow$Main$loginView = A2(
 		]));
 var _jamesmacaulay$tagflow$Main$Slideshow = F2(
 	function (a, b) {
-		return {tag: a, imageUrls: b};
+		return {tag: a, media: b};
 	});
 var _jamesmacaulay$tagflow$Main$slideshow = function (tag) {
 	return A2(
@@ -9208,8 +9540,8 @@ var _jamesmacaulay$tagflow$Main$slideshow = function (tag) {
 };
 var _jamesmacaulay$tagflow$Main$urlUpdate = F2(
 	function (route, model) {
-		var _p2 = route;
-		switch (_p2.ctor) {
+		var _p1 = route;
+		switch (_p1.ctor) {
 			case 'HomeRoute':
 				return {
 					ctor: '_Tuple2',
@@ -9219,24 +9551,38 @@ var _jamesmacaulay$tagflow$Main$urlUpdate = F2(
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'TagRoute':
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							slideshow: _elm_lang$core$Maybe$Just(
-								_jamesmacaulay$tagflow$Main$slideshow(_p2._0)),
-							tagInput: ''
-						}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
+				var _p3 = _p1._0;
+				var _p2 = model.accessToken;
+				if (_p2.ctor === 'Nothing') {
+					return {
+						ctor: '_Tuple2',
+						_0: model,
+						_1: _elm_lang$navigation$Navigation$newUrl('#')
+					};
+				} else {
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{
+								slideshow: _elm_lang$core$Maybe$Just(
+									_jamesmacaulay$tagflow$Main$slideshow(_p3)),
+								tagInput: '',
+								jsonpState: A2(
+									_jamesmacaulay$tagflow$Jsonp$request,
+									A2(_jamesmacaulay$tagflow$Main$recentTaggedMediaUrl, _p2._0, _p3),
+									model.jsonpState)
+							}),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				}
 			default:
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							accessToken: _elm_lang$core$Maybe$Just(_p2._0)
+							accessToken: _elm_lang$core$Maybe$Just(_p1._0)
 						}),
 					_1: _elm_lang$navigation$Navigation$newUrl('#')
 				};
@@ -9249,6 +9595,76 @@ var _jamesmacaulay$tagflow$Main$Model = F4(
 	function (a, b, c, d) {
 		return {slideshow: a, tagInput: b, accessToken: c, jsonpState: d};
 	});
+var _jamesmacaulay$tagflow$Main$Video = function (a) {
+	return {ctor: 'Video', _0: a};
+};
+var _jamesmacaulay$tagflow$Main$videoDecoder = A2(
+	_elm_lang$core$Json_Decode$at,
+	_elm_lang$core$Native_List.fromArray(
+		['videos', 'standard_resolution', 'url']),
+	A2(_elm_lang$core$Json_Decode$map, _jamesmacaulay$tagflow$Main$Video, _elm_lang$core$Json_Decode$string));
+var _jamesmacaulay$tagflow$Main$Image = function (a) {
+	return {ctor: 'Image', _0: a};
+};
+var _jamesmacaulay$tagflow$Main$imageDecoder = A2(
+	_elm_lang$core$Json_Decode$at,
+	_elm_lang$core$Native_List.fromArray(
+		['images', 'standard_resolution', 'url']),
+	A2(_elm_lang$core$Json_Decode$map, _jamesmacaulay$tagflow$Main$Image, _elm_lang$core$Json_Decode$string));
+var _jamesmacaulay$tagflow$Main$mediaDecoder = _elm_lang$core$Json_Decode$oneOf(
+	_elm_lang$core$Native_List.fromArray(
+		[_jamesmacaulay$tagflow$Main$videoDecoder, _jamesmacaulay$tagflow$Main$imageDecoder]));
+var _jamesmacaulay$tagflow$Main$responseDecoder = A2(
+	_elm_lang$core$Json_Decode_ops[':='],
+	'data',
+	_elm_lang$core$Json_Decode$list(_jamesmacaulay$tagflow$Main$mediaDecoder));
+var _jamesmacaulay$tagflow$Main$update = F2(
+	function (msg, model) {
+		var _p4 = msg;
+		switch (_p4.ctor) {
+			case 'TagInput':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{tagInput: _p4._0}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			case 'Submit':
+				return {
+					ctor: '_Tuple2',
+					_0: model,
+					_1: _elm_lang$navigation$Navigation$newUrl(
+						A2(_elm_lang$core$Basics_ops['++'], '#', model.tagInput))
+				};
+			default:
+				var _p5 = A2(_elm_lang$core$Json_Decode$decodeValue, _jamesmacaulay$tagflow$Main$responseDecoder, _p4._0);
+				if (_p5.ctor === 'Err') {
+					return {
+						ctor: '_Tuple2',
+						_0: _jamesmacaulay$tagflow$Main$empty,
+						_1: _elm_lang$navigation$Navigation$newUrl('#')
+					};
+				} else {
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{
+								slideshow: A2(
+									_elm_lang$core$Maybe$map,
+									function (s) {
+										return _elm_lang$core$Native_Utils.update(
+											s,
+											{media: _p5._0});
+									},
+									model.slideshow)
+							}),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				}
+		}
+	});
 var _jamesmacaulay$tagflow$Main$AccessTokenRoute = function (a) {
 	return {ctor: 'AccessTokenRoute', _0: a};
 };
@@ -9260,9 +9676,9 @@ var _jamesmacaulay$tagflow$Main$routeFromHash = function (hash) {
 	if (_elm_lang$core$String$isEmpty(hash)) {
 		return _jamesmacaulay$tagflow$Main$HomeRoute;
 	} else {
-		var _p3 = _jamesmacaulay$tagflow$Main$accessTokenFromHash(hash);
-		if (_p3.ctor === 'Just') {
-			return _jamesmacaulay$tagflow$Main$AccessTokenRoute(_p3._0);
+		var _p6 = _jamesmacaulay$tagflow$Main$accessTokenFromHash(hash);
+		if (_p6.ctor === 'Just') {
+			return _jamesmacaulay$tagflow$Main$AccessTokenRoute(_p6._0);
 		} else {
 			return _jamesmacaulay$tagflow$Main$TagRoute(
 				_jamesmacaulay$tagflow$Main$tagFromHash(hash));
@@ -9270,24 +9686,24 @@ var _jamesmacaulay$tagflow$Main$routeFromHash = function (hash) {
 	}
 };
 var _jamesmacaulay$tagflow$Main$urlParser = _elm_lang$navigation$Navigation$makeParser(
-	function (_p4) {
+	function (_p7) {
 		return _jamesmacaulay$tagflow$Main$routeFromHash(
 			function (_) {
 				return _.hash;
-			}(_p4));
+			}(_p7));
 	});
 var _jamesmacaulay$tagflow$Main$ReceiveResponse = function (a) {
 	return {ctor: 'ReceiveResponse', _0: a};
 };
-var _jamesmacaulay$tagflow$Main$subscriptions = function (_p5) {
+var _jamesmacaulay$tagflow$Main$subscriptions = function (_p8) {
 	return _jamesmacaulay$tagflow$Jsonp$jsonpResponses(_jamesmacaulay$tagflow$Main$ReceiveResponse);
 };
 var _jamesmacaulay$tagflow$Main$Submit = {ctor: 'Submit'};
 var _jamesmacaulay$tagflow$Main$TagInput = function (a) {
 	return {ctor: 'TagInput', _0: a};
 };
-var _jamesmacaulay$tagflow$Main$tagInputView = function (_p6) {
-	var _p7 = _p6;
+var _jamesmacaulay$tagflow$Main$tagInputView = function (_p9) {
+	var _p10 = _p9;
 	return A2(
 		_elm_lang$html$Html$form,
 		_elm_lang$core$Native_List.fromArray(
@@ -9304,17 +9720,17 @@ var _jamesmacaulay$tagflow$Main$tagInputView = function (_p6) {
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html$text(_p7.tagInput)
+						_elm_lang$html$Html$text(_p10.tagInput)
 					]))
 			]));
 };
 var _jamesmacaulay$tagflow$Main$view = function (model) {
-	var _p8 = model.accessToken;
-	if (_p8.ctor === 'Nothing') {
+	var _p11 = model.accessToken;
+	if (_p11.ctor === 'Nothing') {
 		return _jamesmacaulay$tagflow$Main$loginView;
 	} else {
-		var _p9 = model.slideshow;
-		if (_p9.ctor === 'Nothing') {
+		var _p12 = model.slideshow;
+		if (_p12.ctor === 'Nothing') {
 			return _jamesmacaulay$tagflow$Main$tagInputView(model);
 		} else {
 			return _elm_lang$html$Html$text(
@@ -9326,7 +9742,18 @@ var _jamesmacaulay$tagflow$Main$main = {
 	main: A2(
 		_elm_lang$navigation$Navigation$program,
 		_jamesmacaulay$tagflow$Main$urlParser,
-		{init: _jamesmacaulay$tagflow$Main$init, update: _jamesmacaulay$tagflow$Main$update, urlUpdate: _jamesmacaulay$tagflow$Main$urlUpdate, view: _jamesmacaulay$tagflow$Main$view, subscriptions: _jamesmacaulay$tagflow$Main$subscriptions})
+		{
+			init: _jamesmacaulay$tagflow$Main$init,
+			update: _jamesmacaulay$tagflow$Main$update,
+			urlUpdate: _jamesmacaulay$tagflow$Main$urlUpdate,
+			view: A2(
+				_jamesmacaulay$tagflow$Jsonp$wrapView,
+				function (_) {
+					return _.jsonpState;
+				},
+				_jamesmacaulay$tagflow$Main$view),
+			subscriptions: _jamesmacaulay$tagflow$Main$subscriptions
+		})
 };
 
 var Elm = {};

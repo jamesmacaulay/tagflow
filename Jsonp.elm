@@ -72,7 +72,7 @@ request : String -> State -> State
 request url (State { scripts, lastId }) =
     let
         urlWithCallback =
-            appendQueryToUrl url "callback=app.ports.jsonpResponses"
+            appendQueryToUrl url "callback=app.ports.jsonpResponses.send"
 
         id =
             lastId + 1
