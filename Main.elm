@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -6,11 +6,13 @@ import Html.Events exposing (..)
 import Navigation
 import String
 import Regex exposing (Regex, HowMany(All, AtMost), regex)
+import Json.Decode
+import Jsonp
 
 
 config =
     { clientId = "06f0e80490044ad993f6cb6fd79e1149"
-    , redirectUri = "http://localhost:8000/Main.elm"
+    , redirectUri = "http://localhost:8000/"
     }
 
 
@@ -23,6 +25,7 @@ main =
         , view = view
         , subscriptions = subscriptions
         }
+
 
 
 -- URLs
@@ -66,7 +69,7 @@ urlParser =
     Navigation.makeParser (routeFromHash << .hash)
 
 
-urlUpdate : Route -> Model -> (Model, Cmd Msg)
+urlUpdate : Route -> Model -> ( Model, Cmd Msg )
 urlUpdate route model =
     case route of
         HomeRoute ->
@@ -85,17 +88,21 @@ urlUpdate route model =
             )
 
 
+
 -- MODEL
+
 
 type alias Slideshow =
     { tag : String
     , imageUrls : List String
     }
 
+
 type alias Model =
     { slideshow : Maybe Slideshow
     , tagInput : String
     , accessToken : Maybe String
+    , jsonpState : Jsonp.State
     }
 
 
@@ -103,14 +110,20 @@ slideshow : String -> Slideshow
 slideshow tag =
     Slideshow tag []
 
+
 empty : Model
 empty =
-    Model Nothing "" Nothing
+    { slideshow = Nothing
+    , tagInput = ""
+    , accessToken = Nothing
+    , jsonpState = Jsonp.emptyState
+    }
 
 
-init : Route -> (Model, Cmd Msg)
+init : Route -> ( Model, Cmd Msg )
 init route =
     urlUpdate route empty
+
 
 
 -- UPDATE
@@ -119,9 +132,10 @@ init route =
 type Msg
     = TagInput String
     | Submit
+    | ReceiveResponse Json.Decode.Value
 
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         TagInput str ->
@@ -134,15 +148,32 @@ update msg model =
             , Navigation.newUrl ("#" ++ model.tagInput)
             )
 
+        ReceiveResponse jsonValue ->
+            ( { model
+                | slideshow =
+                    model.slideshow
+                        |> Maybe.map
+                            (\slideshow ->
+                                slideshow
+                            )
+              }
+            , Cmd.none
+            )
+
+
 
 -- VIEW
 
 
 authUrl : String -> String -> String
 authUrl clientId redirectUri =
-    "https://api.instagram.com/oauth/authorize/?client_id=" ++ clientId ++
-    "&redirect_uri=" ++ redirectUri ++
-    "&response_type=token"
+    "https://api.instagram.com/oauth/authorize/"
+        ++ "?client_id="
+        ++ clientId
+        ++ "&redirect_uri="
+        ++ redirectUri
+        ++ "&response_type=token"
+        ++ "&scope=public_content"
 
 
 loginView : Html Msg
@@ -151,17 +182,19 @@ loginView =
         []
         [ a
             [ href (authUrl config.clientId config.redirectUri) ]
-            [ text "log in"]
+            [ text "log in" ]
         ]
 
+
 tagInputView : Model -> Html Msg
-tagInputView {tagInput} =
+tagInputView { tagInput } =
     Html.form
         [ onSubmit Submit ]
         [ input
             [ onInput TagInput ]
             [ text tagInput ]
         ]
+
 
 view : Model -> Html Msg
 view model =
@@ -178,9 +211,10 @@ view model =
                     model |> toString |> text
 
 
+
 -- SUBSCRIPTIONS
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    Jsonp.jsonpResponses ReceiveResponse
