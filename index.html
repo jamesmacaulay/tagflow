@@ -9,6 +9,7 @@
         background-color: #000;
         color: #fff;
         font-family: Helvetica, Arial, sans-serif;
+        font-size: 300%;
         padding: 0;
         margin: 0;
       }
@@ -18,12 +19,19 @@
       a:visited {
         color: #99f;
       }
+      button, input, select, textarea {
+        font-family : inherit;
+        font-size   : 100%;
+      }
     </style>
   </head>
   <body>
     <script type="text/javascript">
       (function() {
-        var app = window.app = Elm.Main.fullscreen();
+        var app = window.app = Elm.Main.fullscreen({
+          clientId: "06f0e80490044ad993f6cb6fd79e1149",
+          redirectUri: "http://localhost:8000/"
+        });
       })();
     </script>
   </body>

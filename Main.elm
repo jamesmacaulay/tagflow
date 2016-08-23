@@ -14,14 +14,14 @@ import Time exposing (Time)
 import Array exposing (Array)
 
 
-config =
-    { clientId = "06f0e80490044ad993f6cb6fd79e1149"
-    , redirectUri = "http://localhost:8000/"
+type alias Flags =
+    { clientId : String
+    , redirectUri : String
     }
 
 
 main =
-    Navigation.program urlParser
+    Navigation.programWithFlags urlParser
         { init = init
         , update = update
         , urlUpdate = urlUpdate
@@ -152,6 +152,7 @@ type alias Model =
     , tagInput : String
     , accessToken : Maybe String
     , jsonpState : Jsonp.State
+    , flags : Flags
     }
 
 
@@ -177,18 +178,19 @@ stepSlideshow ({ media, mediaIndex } as slideshow) =
         }
 
 
-empty : Model
-empty =
+empty : Flags -> Model
+empty flags =
     { slideshow = Nothing
     , tagInput = ""
     , accessToken = Nothing
     , jsonpState = Jsonp.emptyState
+    , flags = flags
     }
 
 
-init : Route -> ( Model, Cmd Msg )
-init route =
-    urlUpdate route empty
+init : Flags -> Route -> ( Model, Cmd Msg )
+init flags route =
+    urlUpdate route (empty flags)
 
 
 
@@ -218,7 +220,7 @@ update msg model =
         ReceiveResponse jsonValue ->
             case Json.decodeValue responseDecoder jsonValue of
                 Err e ->
-                    ( empty, Navigation.newUrl "#" )
+                    ( empty model.flags, Navigation.newUrl "#" )
 
                 Ok mediaList ->
                     ( { model
@@ -260,18 +262,25 @@ authUrl clientId redirectUri =
         ++ "&scope=public_content"
 
 
-loginView : Html Msg
-loginView =
-    div []
-        [ a [ href (authUrl config.clientId config.redirectUri) ]
+loginView : Flags -> Html Msg
+loginView flags =
+    dialog
+        [ a [ href (authUrl flags.clientId flags.redirectUri) ]
             [ text "log in" ]
         ]
 
 
 tagInputView : Model -> Html Msg
 tagInputView { tagInput } =
-    Html.form [ onSubmit Submit ]
-        [ input [ onInput TagInput ] [ text tagInput ] ]
+    dialog
+        [ Html.form [ onSubmit Submit ]
+            [ input
+                [ onInput TagInput
+                , placeholder "tag"
+                ]
+                [ text tagInput ]
+            ]
+        ]
 
 
 absoluteCenter : List ( String, String )
@@ -285,39 +294,56 @@ absoluteCenter =
     ]
 
 
+dialog : List (Html msg) -> Html msg
+dialog children =
+    div
+        [ style
+            (absoluteCenter
+                ++ [ ( "height", "10%" )
+                   , ( "width", "100%" )
+                   , ( "text-align", "center" )
+                   ]
+            )
+        ]
+        children
+
+
+slideshowView : Slideshow -> Html msg
+slideshowView { media, mediaIndex } =
+    case Array.get mediaIndex media of
+        Nothing ->
+            dialog [ text "fetching..." ]
+
+        Just (Image url) ->
+            img
+                [ src url
+                , style
+                    (absoluteCenter
+                        ++ [ ( "max-width", "100%" )
+                           , ( "max-height", "100%" )
+                           , ( "overflow", "auto" )
+                           ]
+                    )
+                ]
+                []
+
+        Just (Video url) ->
+            dialog [ text "[video]" ]
+
+
 view : Model -> Html Msg
 view model =
     case model.accessToken of
         Nothing ->
-            loginView
+            loginView model.flags
 
         Just token ->
             case model.slideshow of
                 Nothing ->
                     tagInputView model
 
-                Just { media, mediaIndex } ->
-                    case Array.get mediaIndex media of
-                        Nothing ->
-                            text "fetching..."
-
-                        Just (Image url) ->
-                            div []
-                                [ img
-                                    [ src url
-                                    , style
-                                        (absoluteCenter
-                                            ++ [ ( "max-width", "100%" )
-                                               , ( "max-height", "100%" )
-                                               , ( "overflow", "auto" )
-                                               ]
-                                        )
-                                    ]
-                                    []
-                                ]
-
-                        Just (Video url) ->
-                            text "[video]"
+                Just slideshow ->
+                    slideshowView slideshow
 
 
 

@@ -9462,6 +9462,62 @@ var _jamesmacaulay$tagflow$Main$absoluteCenter = _elm_lang$core$Native_List.from
 		{ctor: '_Tuple2', _0: 'right', _1: '0'},
 		{ctor: '_Tuple2', _0: 'margin', _1: 'auto'}
 	]);
+var _jamesmacaulay$tagflow$Main$dialog = function (children) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$style(
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_jamesmacaulay$tagflow$Main$absoluteCenter,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							{ctor: '_Tuple2', _0: 'height', _1: '10%'},
+							{ctor: '_Tuple2', _0: 'width', _1: '100%'},
+							{ctor: '_Tuple2', _0: 'text-align', _1: 'center'}
+						])))
+			]),
+		children);
+};
+var _jamesmacaulay$tagflow$Main$slideshowView = function (_p0) {
+	var _p1 = _p0;
+	var _p2 = A2(_elm_lang$core$Array$get, _p1.mediaIndex, _p1.media);
+	if (_p2.ctor === 'Nothing') {
+		return _jamesmacaulay$tagflow$Main$dialog(
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html$text('fetching...')
+				]));
+	} else {
+		if (_p2._0.ctor === 'Image') {
+			return A2(
+				_elm_lang$html$Html$img,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$src(_p2._0._0),
+						_elm_lang$html$Html_Attributes$style(
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							_jamesmacaulay$tagflow$Main$absoluteCenter,
+							_elm_lang$core$Native_List.fromArray(
+								[
+									{ctor: '_Tuple2', _0: 'max-width', _1: '100%'},
+									{ctor: '_Tuple2', _0: 'max-height', _1: '100%'},
+									{ctor: '_Tuple2', _0: 'overflow', _1: 'auto'}
+								])))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[]));
+		} else {
+			return _jamesmacaulay$tagflow$Main$dialog(
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('[video]')
+					]));
+		}
+	}
+};
 var _jamesmacaulay$tagflow$Main$authUrl = F2(
 	function (clientId, redirectUri) {
 		return A2(
@@ -9481,15 +9537,34 @@ var _jamesmacaulay$tagflow$Main$authUrl = F2(
 							redirectUri,
 							A2(_elm_lang$core$Basics_ops['++'], '&response_type=token', '&scope=public_content'))))));
 	});
-var _jamesmacaulay$tagflow$Main$empty = {slideshow: _elm_lang$core$Maybe$Nothing, tagInput: '', accessToken: _elm_lang$core$Maybe$Nothing, jsonpState: _jamesmacaulay$tagflow$Jsonp$emptyState};
-var _jamesmacaulay$tagflow$Main$stepSlideshow = function (_p0) {
-	var _p1 = _p0;
-	var incremented = _p1.mediaIndex + 1;
+var _jamesmacaulay$tagflow$Main$loginView = function (flags) {
+	return _jamesmacaulay$tagflow$Main$dialog(
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$a,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$href(
+						A2(_jamesmacaulay$tagflow$Main$authUrl, flags.clientId, flags.redirectUri))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('log in')
+					]))
+			]));
+};
+var _jamesmacaulay$tagflow$Main$empty = function (flags) {
+	return {slideshow: _elm_lang$core$Maybe$Nothing, tagInput: '', accessToken: _elm_lang$core$Maybe$Nothing, jsonpState: _jamesmacaulay$tagflow$Jsonp$emptyState, flags: flags};
+};
+var _jamesmacaulay$tagflow$Main$stepSlideshow = function (_p3) {
+	var _p4 = _p3;
+	var incremented = _p4.mediaIndex + 1;
 	var loopedAround = (_elm_lang$core$Native_Utils.cmp(
 		incremented,
-		_elm_lang$core$Array$length(_p1.media)) > -1) ? 0 : incremented;
+		_elm_lang$core$Array$length(_p4.media)) > -1) ? 0 : incremented;
 	return _elm_lang$core$Native_Utils.update(
-		_p1,
+		_p4,
 		{mediaIndex: loopedAround});
 };
 var _jamesmacaulay$tagflow$Main$tagFromHash = A3(
@@ -9501,14 +9576,14 @@ var _jamesmacaulay$tagflow$Main$accessTokenFromHash = function (hash) {
 	return A3(
 		_elm_lang$core$Basics$flip,
 		_elm_lang$core$Maybe$andThen,
-		function (_p2) {
+		function (_p5) {
 			return A2(
 				_elm_lang$core$Maybe$withDefault,
 				_elm_lang$core$Maybe$Nothing,
 				_elm_lang$core$List$head(
 					function (_) {
 						return _.submatches;
-					}(_p2)));
+					}(_p5)));
 		},
 		_elm_lang$core$List$head(
 			A3(
@@ -9527,25 +9602,10 @@ var _jamesmacaulay$tagflow$Main$recentTaggedMediaUrl = F2(
 				tag,
 				A2(_elm_lang$core$Basics_ops['++'], '/media/recent?access_token=', accessToken)));
 	});
-var _jamesmacaulay$tagflow$Main$config = {clientId: '06f0e80490044ad993f6cb6fd79e1149', redirectUri: 'http://localhost:8000/'};
-var _jamesmacaulay$tagflow$Main$loginView = A2(
-	_elm_lang$html$Html$div,
-	_elm_lang$core$Native_List.fromArray(
-		[]),
-	_elm_lang$core$Native_List.fromArray(
-		[
-			A2(
-			_elm_lang$html$Html$a,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html_Attributes$href(
-					A2(_jamesmacaulay$tagflow$Main$authUrl, _jamesmacaulay$tagflow$Main$config.clientId, _jamesmacaulay$tagflow$Main$config.redirectUri))
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html$text('log in')
-				]))
-		]));
+var _jamesmacaulay$tagflow$Main$Flags = F2(
+	function (a, b) {
+		return {clientId: a, redirectUri: b};
+	});
 var _jamesmacaulay$tagflow$Main$Slideshow = F3(
 	function (a, b, c) {
 		return {tag: a, media: b, mediaIndex: c};
@@ -9555,8 +9615,8 @@ var _jamesmacaulay$tagflow$Main$slideshow = function (tag) {
 };
 var _jamesmacaulay$tagflow$Main$urlUpdate = F2(
 	function (route, model) {
-		var _p3 = route;
-		switch (_p3.ctor) {
+		var _p6 = route;
+		switch (_p6.ctor) {
 			case 'HomeRoute':
 				return {
 					ctor: '_Tuple2',
@@ -9566,9 +9626,9 @@ var _jamesmacaulay$tagflow$Main$urlUpdate = F2(
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'TagRoute':
-				var _p5 = _p3._0;
-				var _p4 = model.accessToken;
-				if (_p4.ctor === 'Nothing') {
+				var _p8 = _p6._0;
+				var _p7 = model.accessToken;
+				if (_p7.ctor === 'Nothing') {
 					return {
 						ctor: '_Tuple2',
 						_0: model,
@@ -9581,11 +9641,11 @@ var _jamesmacaulay$tagflow$Main$urlUpdate = F2(
 							model,
 							{
 								slideshow: _elm_lang$core$Maybe$Just(
-									_jamesmacaulay$tagflow$Main$slideshow(_p5)),
+									_jamesmacaulay$tagflow$Main$slideshow(_p8)),
 								tagInput: '',
 								jsonpState: A2(
 									_jamesmacaulay$tagflow$Jsonp$request,
-									A2(_jamesmacaulay$tagflow$Main$recentTaggedMediaUrl, _p4._0, _p5),
+									A2(_jamesmacaulay$tagflow$Main$recentTaggedMediaUrl, _p7._0, _p8),
 									model.jsonpState)
 							}),
 						_1: _elm_lang$core$Platform_Cmd$none
@@ -9597,18 +9657,22 @@ var _jamesmacaulay$tagflow$Main$urlUpdate = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							accessToken: _elm_lang$core$Maybe$Just(_p3._0)
+							accessToken: _elm_lang$core$Maybe$Just(_p6._0)
 						}),
 					_1: _elm_lang$navigation$Navigation$newUrl('#')
 				};
 		}
 	});
-var _jamesmacaulay$tagflow$Main$init = function (route) {
-	return A2(_jamesmacaulay$tagflow$Main$urlUpdate, route, _jamesmacaulay$tagflow$Main$empty);
-};
-var _jamesmacaulay$tagflow$Main$Model = F4(
-	function (a, b, c, d) {
-		return {slideshow: a, tagInput: b, accessToken: c, jsonpState: d};
+var _jamesmacaulay$tagflow$Main$init = F2(
+	function (flags, route) {
+		return A2(
+			_jamesmacaulay$tagflow$Main$urlUpdate,
+			route,
+			_jamesmacaulay$tagflow$Main$empty(flags));
+	});
+var _jamesmacaulay$tagflow$Main$Model = F5(
+	function (a, b, c, d, e) {
+		return {slideshow: a, tagInput: b, accessToken: c, jsonpState: d, flags: e};
 	});
 var _jamesmacaulay$tagflow$Main$Video = function (a) {
 	return {ctor: 'Video', _0: a};
@@ -9635,14 +9699,14 @@ var _jamesmacaulay$tagflow$Main$responseDecoder = A2(
 	_elm_lang$core$Json_Decode$array(_jamesmacaulay$tagflow$Main$mediaDecoder));
 var _jamesmacaulay$tagflow$Main$update = F2(
 	function (msg, model) {
-		var _p6 = msg;
-		switch (_p6.ctor) {
+		var _p9 = msg;
+		switch (_p9.ctor) {
 			case 'TagInput':
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{tagInput: _p6._0}),
+						{tagInput: _p9._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'Submit':
@@ -9653,11 +9717,11 @@ var _jamesmacaulay$tagflow$Main$update = F2(
 						A2(_elm_lang$core$Basics_ops['++'], '#', model.tagInput))
 				};
 			case 'ReceiveResponse':
-				var _p7 = A2(_elm_lang$core$Json_Decode$decodeValue, _jamesmacaulay$tagflow$Main$responseDecoder, _p6._0);
-				if (_p7.ctor === 'Err') {
+				var _p10 = A2(_elm_lang$core$Json_Decode$decodeValue, _jamesmacaulay$tagflow$Main$responseDecoder, _p9._0);
+				if (_p10.ctor === 'Err') {
 					return {
 						ctor: '_Tuple2',
-						_0: _jamesmacaulay$tagflow$Main$empty,
+						_0: _jamesmacaulay$tagflow$Main$empty(model.flags),
 						_1: _elm_lang$navigation$Navigation$newUrl('#')
 					};
 				} else {
@@ -9671,7 +9735,7 @@ var _jamesmacaulay$tagflow$Main$update = F2(
 									function (s) {
 										return _elm_lang$core$Native_Utils.update(
 											s,
-											{media: _p7._0});
+											{media: _p10._0});
 									},
 									model.slideshow)
 							}),
@@ -9679,8 +9743,8 @@ var _jamesmacaulay$tagflow$Main$update = F2(
 					};
 				}
 			default:
-				var _p8 = model.slideshow;
-				if (_p8.ctor === 'Nothing') {
+				var _p11 = model.slideshow;
+				if (_p11.ctor === 'Nothing') {
 					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 				} else {
 					return {
@@ -9689,7 +9753,7 @@ var _jamesmacaulay$tagflow$Main$update = F2(
 							model,
 							{
 								slideshow: _elm_lang$core$Maybe$Just(
-									_jamesmacaulay$tagflow$Main$stepSlideshow(_p8._0))
+									_jamesmacaulay$tagflow$Main$stepSlideshow(_p11._0))
 							}),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
@@ -9707,9 +9771,9 @@ var _jamesmacaulay$tagflow$Main$routeFromHash = function (hash) {
 	if (_elm_lang$core$String$isEmpty(hash)) {
 		return _jamesmacaulay$tagflow$Main$HomeRoute;
 	} else {
-		var _p9 = _jamesmacaulay$tagflow$Main$accessTokenFromHash(hash);
-		if (_p9.ctor === 'Just') {
-			return _jamesmacaulay$tagflow$Main$AccessTokenRoute(_p9._0);
+		var _p12 = _jamesmacaulay$tagflow$Main$accessTokenFromHash(hash);
+		if (_p12.ctor === 'Just') {
+			return _jamesmacaulay$tagflow$Main$AccessTokenRoute(_p12._0);
 		} else {
 			return _jamesmacaulay$tagflow$Main$TagRoute(
 				_jamesmacaulay$tagflow$Main$tagFromHash(hash));
@@ -9717,11 +9781,11 @@ var _jamesmacaulay$tagflow$Main$routeFromHash = function (hash) {
 	}
 };
 var _jamesmacaulay$tagflow$Main$urlParser = _elm_lang$navigation$Navigation$makeParser(
-	function (_p10) {
+	function (_p13) {
 		return _jamesmacaulay$tagflow$Main$routeFromHash(
 			function (_) {
 				return _.hash;
-			}(_p10));
+			}(_p13));
 	});
 var _jamesmacaulay$tagflow$Main$Tick = function (a) {
 	return {ctor: 'Tick', _0: a};
@@ -9729,7 +9793,7 @@ var _jamesmacaulay$tagflow$Main$Tick = function (a) {
 var _jamesmacaulay$tagflow$Main$ReceiveResponse = function (a) {
 	return {ctor: 'ReceiveResponse', _0: a};
 };
-var _jamesmacaulay$tagflow$Main$subscriptions = function (_p11) {
+var _jamesmacaulay$tagflow$Main$subscriptions = function (_p14) {
 	return _elm_lang$core$Platform_Sub$batch(
 		_elm_lang$core$Native_List.fromArray(
 			[
@@ -9741,77 +9805,49 @@ var _jamesmacaulay$tagflow$Main$Submit = {ctor: 'Submit'};
 var _jamesmacaulay$tagflow$Main$TagInput = function (a) {
 	return {ctor: 'TagInput', _0: a};
 };
-var _jamesmacaulay$tagflow$Main$tagInputView = function (_p12) {
-	var _p13 = _p12;
-	return A2(
-		_elm_lang$html$Html$form,
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html_Events$onSubmit(_jamesmacaulay$tagflow$Main$Submit)
-			]),
+var _jamesmacaulay$tagflow$Main$tagInputView = function (_p15) {
+	var _p16 = _p15;
+	return _jamesmacaulay$tagflow$Main$dialog(
 		_elm_lang$core$Native_List.fromArray(
 			[
 				A2(
-				_elm_lang$html$Html$input,
+				_elm_lang$html$Html$form,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Events$onInput(_jamesmacaulay$tagflow$Main$TagInput)
+						_elm_lang$html$Html_Events$onSubmit(_jamesmacaulay$tagflow$Main$Submit)
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html$text(_p13.tagInput)
+						A2(
+						_elm_lang$html$Html$input,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Events$onInput(_jamesmacaulay$tagflow$Main$TagInput),
+								_elm_lang$html$Html_Attributes$placeholder('tag')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text(_p16.tagInput)
+							]))
 					]))
 			]));
 };
 var _jamesmacaulay$tagflow$Main$view = function (model) {
-	var _p14 = model.accessToken;
-	if (_p14.ctor === 'Nothing') {
-		return _jamesmacaulay$tagflow$Main$loginView;
+	var _p17 = model.accessToken;
+	if (_p17.ctor === 'Nothing') {
+		return _jamesmacaulay$tagflow$Main$loginView(model.flags);
 	} else {
-		var _p15 = model.slideshow;
-		if (_p15.ctor === 'Nothing') {
+		var _p18 = model.slideshow;
+		if (_p18.ctor === 'Nothing') {
 			return _jamesmacaulay$tagflow$Main$tagInputView(model);
 		} else {
-			var _p16 = A2(_elm_lang$core$Array$get, _p15._0.mediaIndex, _p15._0.media);
-			if (_p16.ctor === 'Nothing') {
-				return _elm_lang$html$Html$text('fetching...');
-			} else {
-				if (_p16._0.ctor === 'Image') {
-					return A2(
-						_elm_lang$html$Html$div,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								A2(
-								_elm_lang$html$Html$img,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$src(_p16._0._0),
-										_elm_lang$html$Html_Attributes$style(
-										A2(
-											_elm_lang$core$Basics_ops['++'],
-											_jamesmacaulay$tagflow$Main$absoluteCenter,
-											_elm_lang$core$Native_List.fromArray(
-												[
-													{ctor: '_Tuple2', _0: 'max-width', _1: '100%'},
-													{ctor: '_Tuple2', _0: 'max-height', _1: '100%'},
-													{ctor: '_Tuple2', _0: 'overflow', _1: 'auto'}
-												])))
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[]))
-							]));
-				} else {
-					return _elm_lang$html$Html$text('[video]');
-				}
-			}
+			return _jamesmacaulay$tagflow$Main$slideshowView(_p18._0);
 		}
 	}
 };
 var _jamesmacaulay$tagflow$Main$main = {
 	main: A2(
-		_elm_lang$navigation$Navigation$program,
+		_elm_lang$navigation$Navigation$programWithFlags,
 		_jamesmacaulay$tagflow$Main$urlParser,
 		{
 			init: _jamesmacaulay$tagflow$Main$init,
@@ -9824,6 +9860,18 @@ var _jamesmacaulay$tagflow$Main$main = {
 				},
 				_jamesmacaulay$tagflow$Main$view),
 			subscriptions: _jamesmacaulay$tagflow$Main$subscriptions
+		}),
+	flags: A2(
+		_elm_lang$core$Json_Decode$andThen,
+		A2(_elm_lang$core$Json_Decode_ops[':='], 'clientId', _elm_lang$core$Json_Decode$string),
+		function (clientId) {
+			return A2(
+				_elm_lang$core$Json_Decode$andThen,
+				A2(_elm_lang$core$Json_Decode_ops[':='], 'redirectUri', _elm_lang$core$Json_Decode$string),
+				function (redirectUri) {
+					return _elm_lang$core$Json_Decode$succeed(
+						{clientId: clientId, redirectUri: redirectUri});
+				});
 		})
 };
 
