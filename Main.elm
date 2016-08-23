@@ -10,6 +10,8 @@ import Http
 import Json.Decode as Json exposing (Decoder, (:=))
 import Jsonp
 import Task exposing (Task)
+import Time exposing (Time)
+import Array exposing (Array)
 
 
 config =
@@ -52,9 +54,9 @@ mediaDecoder =
     Json.oneOf [ videoDecoder, imageDecoder ]
 
 
-responseDecoder : Decoder (List Media)
+responseDecoder : Decoder (Array Media)
 responseDecoder =
-    "data" := Json.list mediaDecoder
+    "data" := Json.array mediaDecoder
 
 
 recentTaggedMediaUrl : String -> String -> String
@@ -140,7 +142,8 @@ urlUpdate route model =
 
 type alias Slideshow =
     { tag : String
-    , media : List Media
+    , media : Array Media
+    , mediaIndex : Int
     }
 
 
@@ -154,7 +157,24 @@ type alias Model =
 
 slideshow : String -> Slideshow
 slideshow tag =
-    Slideshow tag []
+    Slideshow tag Array.empty 0
+
+
+stepSlideshow : Slideshow -> Slideshow
+stepSlideshow ({ media, mediaIndex } as slideshow) =
+    let
+        incremented =
+            mediaIndex + 1
+
+        loopedAround =
+            if incremented >= Array.length media then
+                0
+            else
+                incremented
+    in
+        { slideshow
+            | mediaIndex = loopedAround
+        }
 
 
 empty : Model
@@ -179,6 +199,7 @@ type Msg
     = TagInput String
     | Submit
     | ReceiveResponse Json.Value
+    | Tick Time
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -207,6 +228,18 @@ update msg model =
                                     { s | media = mediaList }
                                 )
                                 model.slideshow
+                      }
+                    , Cmd.none
+                    )
+
+        Tick _ ->
+            case model.slideshow of
+                Nothing ->
+                    ( model, Cmd.none )
+
+                Just slideshow ->
+                    ( { model
+                        | slideshow = Just (stepSlideshow slideshow)
                       }
                     , Cmd.none
                     )
@@ -241,6 +274,17 @@ tagInputView { tagInput } =
         [ input [ onInput TagInput ] [ text tagInput ] ]
 
 
+absoluteCenter : List ( String, String )
+absoluteCenter =
+    [ ( "position", "absolute" )
+    , ( "top", "0" )
+    , ( "bottom", "0" )
+    , ( "left", "0" )
+    , ( "right", "0" )
+    , ( "margin", "auto" )
+    ]
+
+
 view : Model -> Html Msg
 view model =
     case model.accessToken of
@@ -252,8 +296,28 @@ view model =
                 Nothing ->
                     tagInputView model
 
-                Just slideshow ->
-                    model |> toString |> text
+                Just { media, mediaIndex } ->
+                    case Array.get mediaIndex media of
+                        Nothing ->
+                            text "fetching..."
+
+                        Just (Image url) ->
+                            div []
+                                [ img
+                                    [ src url
+                                    , style
+                                        (absoluteCenter
+                                            ++ [ ( "max-width", "100%" )
+                                               , ( "max-height", "100%" )
+                                               , ( "overflow", "auto" )
+                                               ]
+                                        )
+                                    ]
+                                    []
+                                ]
+
+                        Just (Video url) ->
+                            text "[video]"
 
 
 
@@ -262,4 +326,7 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Jsonp.jsonpResponses ReceiveResponse
+    Sub.batch
+        [ Jsonp.jsonpResponses ReceiveResponse
+        , Time.every 5000 Tick
+        ]
