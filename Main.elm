@@ -262,27 +262,6 @@ authUrl clientId redirectUri =
         ++ "&scope=public_content"
 
 
-loginView : Flags -> Html Msg
-loginView flags =
-    dialog
-        [ a [ href (authUrl flags.clientId flags.redirectUri) ]
-            [ text "log in" ]
-        ]
-
-
-tagInputView : Model -> Html Msg
-tagInputView { tagInput } =
-    dialog
-        [ Html.form [ onSubmit Submit ]
-            [ input
-                [ onInput TagInput
-                , placeholder "tag"
-                ]
-                [ text tagInput ]
-            ]
-        ]
-
-
 absoluteCenter : List ( String, String )
 absoluteCenter =
     [ ( "position", "absolute" )
@@ -299,13 +278,38 @@ dialog children =
     div
         [ style
             (absoluteCenter
-                ++ [ ( "height", "10%" )
-                   , ( "width", "100%" )
+                ++ [ ( "height", "50%" )
+                   , ( "padding", "0 50px" )
                    , ( "text-align", "center" )
                    ]
             )
         ]
         children
+
+
+loginView : Flags -> Html Msg
+loginView flags =
+    dialog
+        [ p []
+            [ a [ href (authUrl flags.clientId flags.redirectUri) ]
+                [ text "log in through instagram" ]
+            ]
+        , p [ style [ ( "font-size", "50%" ), ( "color", "#999" ) ] ]
+            [ text "This application only ever accesses publicly available Instagram content, and doesn't share usage data with any third parties." ]
+        ]
+
+
+tagInputView : Model -> Html Msg
+tagInputView { tagInput } =
+    dialog
+        [ Html.form [ onSubmit Submit ]
+            [ input
+                [ onInput TagInput
+                , placeholder "tag"
+                ]
+                [ text tagInput ]
+            ]
+        ]
 
 
 slideshowView : Slideshow -> Html msg

@@ -9473,8 +9473,8 @@ var _jamesmacaulay$tagflow$Main$dialog = function (children) {
 					_jamesmacaulay$tagflow$Main$absoluteCenter,
 					_elm_lang$core$Native_List.fromArray(
 						[
-							{ctor: '_Tuple2', _0: 'height', _1: '10%'},
-							{ctor: '_Tuple2', _0: 'width', _1: '100%'},
+							{ctor: '_Tuple2', _0: 'height', _1: '50%'},
+							{ctor: '_Tuple2', _0: 'padding', _1: '0 50px'},
 							{ctor: '_Tuple2', _0: 'text-align', _1: 'center'}
 						])))
 			]),
@@ -9542,15 +9542,37 @@ var _jamesmacaulay$tagflow$Main$loginView = function (flags) {
 		_elm_lang$core$Native_List.fromArray(
 			[
 				A2(
-				_elm_lang$html$Html$a,
+				_elm_lang$html$Html$p,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Attributes$href(
-						A2(_jamesmacaulay$tagflow$Main$authUrl, flags.clientId, flags.redirectUri))
+						A2(
+						_elm_lang$html$Html$a,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$href(
+								A2(_jamesmacaulay$tagflow$Main$authUrl, flags.clientId, flags.redirectUri))
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('log in through instagram')
+							]))
+					])),
+				A2(
+				_elm_lang$html$Html$p,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$style(
+						_elm_lang$core$Native_List.fromArray(
+							[
+								{ctor: '_Tuple2', _0: 'font-size', _1: '50%'},
+								{ctor: '_Tuple2', _0: 'color', _1: '#999'}
+							]))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html$text('log in')
+						_elm_lang$html$Html$text('This application only ever accesses publicly available Instagram content, and doesn\'t share usage data with any third parties.')
 					]))
 			]));
 };
