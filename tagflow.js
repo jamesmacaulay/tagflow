@@ -5817,6 +5817,87 @@ var _elm_lang$core$Json_Decode$dict = function (decoder) {
 };
 var _elm_lang$core$Json_Decode$Decoder = {ctor: 'Decoder'};
 
+var _NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$nullable = function (decoder) {
+	return _elm_lang$core$Json_Decode$oneOf(
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$core$Json_Decode$null(_elm_lang$core$Maybe$Nothing),
+				A2(_elm_lang$core$Json_Decode$map, _elm_lang$core$Maybe$Just, decoder)
+			]));
+};
+var _NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode = _elm_lang$core$Json_Decode$succeed;
+var _NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$resolveResult = function (resultDecoder) {
+	return A2(_elm_lang$core$Json_Decode$customDecoder, resultDecoder, _elm_lang$core$Basics$identity);
+};
+var _NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$custom = _elm_lang$core$Json_Decode$object2(
+	F2(
+		function (x, y) {
+			return y(x);
+		}));
+var _NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$hardcoded = function (_p0) {
+	return _NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$custom(
+		_elm_lang$core$Json_Decode$succeed(_p0));
+};
+var _NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$optionalDecoder = F3(
+	function (pathDecoder, valDecoder, fallback) {
+		var nullOr = function (decoder) {
+			return _elm_lang$core$Json_Decode$oneOf(
+				_elm_lang$core$Native_List.fromArray(
+					[
+						decoder,
+						_elm_lang$core$Json_Decode$null(fallback)
+					]));
+		};
+		var handleResult = function (input) {
+			var _p1 = A2(_elm_lang$core$Json_Decode$decodeValue, pathDecoder, input);
+			if (_p1.ctor === 'Ok') {
+				return A2(
+					_elm_lang$core$Json_Decode$decodeValue,
+					nullOr(valDecoder),
+					_p1._0);
+			} else {
+				return _elm_lang$core$Result$Ok(fallback);
+			}
+		};
+		return A2(_elm_lang$core$Json_Decode$customDecoder, _elm_lang$core$Json_Decode$value, handleResult);
+	});
+var _NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$optionalAt = F4(
+	function (path, valDecoder, fallback, decoder) {
+		return A2(
+			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$custom,
+			A3(
+				_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$optionalDecoder,
+				A2(_elm_lang$core$Json_Decode$at, path, _elm_lang$core$Json_Decode$value),
+				valDecoder,
+				fallback),
+			decoder);
+	});
+var _NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$optional = F4(
+	function (key, valDecoder, fallback, decoder) {
+		return A2(
+			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$custom,
+			A3(
+				_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$optionalDecoder,
+				A2(_elm_lang$core$Json_Decode_ops[':='], key, _elm_lang$core$Json_Decode$value),
+				valDecoder,
+				fallback),
+			decoder);
+	});
+var _NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$requiredAt = F3(
+	function (path, valDecoder, decoder) {
+		return A2(
+			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$custom,
+			A2(_elm_lang$core$Json_Decode$at, path, valDecoder),
+			decoder);
+	});
+var _NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required = F3(
+	function (key, valDecoder, decoder) {
+		return A2(
+			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$custom,
+			A2(_elm_lang$core$Json_Decode_ops[':='], key, valDecoder),
+			decoder);
+	});
+
 var _elm_lang$core$Task$onError = _elm_lang$core$Native_Scheduler.onError;
 var _elm_lang$core$Task$andThen = _elm_lang$core$Native_Scheduler.andThen;
 var _elm_lang$core$Task$spawnCmd = F2(
@@ -9492,23 +9573,32 @@ var _jamesmacaulay$tagflow$Main$slideshowView = function (_p0) {
 	} else {
 		if (_p2._0.ctor === 'Image') {
 			return A2(
-				_elm_lang$html$Html$img,
+				_elm_lang$html$Html$a,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Attributes$src(_p2._0._0),
-						_elm_lang$html$Html_Attributes$style(
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							_jamesmacaulay$tagflow$Main$absoluteCenter,
-							_elm_lang$core$Native_List.fromArray(
-								[
-									{ctor: '_Tuple2', _0: 'max-width', _1: '100%'},
-									{ctor: '_Tuple2', _0: 'max-height', _1: '100%'},
-									{ctor: '_Tuple2', _0: 'overflow', _1: 'auto'}
-								])))
+						_elm_lang$html$Html_Attributes$href(_p2._0._0.htmlUrl)
 					]),
 				_elm_lang$core$Native_List.fromArray(
-					[]));
+					[
+						A2(
+						_elm_lang$html$Html$img,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$src(_p2._0._0.mediaUrl),
+								_elm_lang$html$Html_Attributes$style(
+								A2(
+									_elm_lang$core$Basics_ops['++'],
+									_jamesmacaulay$tagflow$Main$absoluteCenter,
+									_elm_lang$core$Native_List.fromArray(
+										[
+											{ctor: '_Tuple2', _0: 'max-width', _1: '100%'},
+											{ctor: '_Tuple2', _0: 'max-height', _1: '100%'},
+											{ctor: '_Tuple2', _0: 'overflow', _1: 'auto'}
+										])))
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[]))
+					]));
 		} else {
 			return _jamesmacaulay$tagflow$Main$dialog(
 				_elm_lang$core$Native_List.fromArray(
@@ -9628,6 +9718,10 @@ var _jamesmacaulay$tagflow$Main$Flags = F2(
 	function (a, b) {
 		return {clientId: a, redirectUri: b};
 	});
+var _jamesmacaulay$tagflow$Main$MediaUrls = F2(
+	function (a, b) {
+		return {mediaUrl: a, htmlUrl: b};
+	});
 var _jamesmacaulay$tagflow$Main$Slideshow = F3(
 	function (a, b, c) {
 		return {tag: a, media: b, mediaIndex: c};
@@ -9700,18 +9794,34 @@ var _jamesmacaulay$tagflow$Main$Video = function (a) {
 	return {ctor: 'Video', _0: a};
 };
 var _jamesmacaulay$tagflow$Main$videoDecoder = A2(
-	_elm_lang$core$Json_Decode$at,
-	_elm_lang$core$Native_List.fromArray(
-		['videos', 'standard_resolution', 'url']),
-	A2(_elm_lang$core$Json_Decode$map, _jamesmacaulay$tagflow$Main$Video, _elm_lang$core$Json_Decode$string));
+	_elm_lang$core$Json_Decode$map,
+	_jamesmacaulay$tagflow$Main$Video,
+	A3(
+		_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
+		'link',
+		_elm_lang$core$Json_Decode$string,
+		A3(
+			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$requiredAt,
+			_elm_lang$core$Native_List.fromArray(
+				['videos', 'standard_resolution', 'url']),
+			_elm_lang$core$Json_Decode$string,
+			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_jamesmacaulay$tagflow$Main$MediaUrls))));
 var _jamesmacaulay$tagflow$Main$Image = function (a) {
 	return {ctor: 'Image', _0: a};
 };
 var _jamesmacaulay$tagflow$Main$imageDecoder = A2(
-	_elm_lang$core$Json_Decode$at,
-	_elm_lang$core$Native_List.fromArray(
-		['images', 'standard_resolution', 'url']),
-	A2(_elm_lang$core$Json_Decode$map, _jamesmacaulay$tagflow$Main$Image, _elm_lang$core$Json_Decode$string));
+	_elm_lang$core$Json_Decode$map,
+	_jamesmacaulay$tagflow$Main$Image,
+	A3(
+		_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$required,
+		'link',
+		_elm_lang$core$Json_Decode$string,
+		A3(
+			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$requiredAt,
+			_elm_lang$core$Native_List.fromArray(
+				['images', 'standard_resolution', 'url']),
+			_elm_lang$core$Json_Decode$string,
+			_NoRedInk$elm_decode_pipeline$Json_Decode_Pipeline$decode(_jamesmacaulay$tagflow$Main$MediaUrls))));
 var _jamesmacaulay$tagflow$Main$mediaDecoder = _elm_lang$core$Json_Decode$oneOf(
 	_elm_lang$core$Native_List.fromArray(
 		[_jamesmacaulay$tagflow$Main$videoDecoder, _jamesmacaulay$tagflow$Main$imageDecoder]));

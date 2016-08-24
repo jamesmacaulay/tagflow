@@ -8,6 +8,7 @@ import String
 import Regex exposing (Regex, HowMany(All, AtMost), regex)
 import Http
 import Json.Decode as Json exposing (Decoder, (:=))
+import Json.Decode.Pipeline as Decode exposing (decode)
 import Jsonp
 import Task exposing (Task)
 import Time exposing (Time)
@@ -34,19 +35,31 @@ main =
 -- JSON
 
 
+type alias MediaUrls =
+    { mediaUrl : String
+    , htmlUrl : String
+    }
+
+
 type Media
-    = Image String
-    | Video String
+    = Image MediaUrls
+    | Video MediaUrls
 
 
 imageDecoder : Decoder Media
 imageDecoder =
-    Json.at [ "images", "standard_resolution", "url" ] (Json.map Image Json.string)
+    decode MediaUrls
+        |> Decode.requiredAt [ "images", "standard_resolution", "url" ] Json.string
+        |> Decode.required "link" Json.string
+        |> Json.map Image
 
 
 videoDecoder : Decoder Media
 videoDecoder =
-    Json.at [ "videos", "standard_resolution", "url" ] (Json.map Video Json.string)
+    decode MediaUrls
+        |> Decode.requiredAt [ "videos", "standard_resolution", "url" ] Json.string
+        |> Decode.required "link" Json.string
+        |> Json.map Video
 
 
 mediaDecoder : Decoder Media
@@ -318,18 +331,20 @@ slideshowView { media, mediaIndex } =
         Nothing ->
             dialog [ text "fetching..." ]
 
-        Just (Image url) ->
-            img
-                [ src url
-                , style
-                    (absoluteCenter
-                        ++ [ ( "max-width", "100%" )
-                           , ( "max-height", "100%" )
-                           , ( "overflow", "auto" )
-                           ]
-                    )
+        Just (Image { mediaUrl, htmlUrl }) ->
+            a [ href htmlUrl ]
+                [ img
+                    [ src mediaUrl
+                    , style
+                        (absoluteCenter
+                            ++ [ ( "max-width", "100%" )
+                               , ( "max-height", "100%" )
+                               , ( "overflow", "auto" )
+                               ]
+                        )
+                    ]
+                    []
                 ]
-                []
 
         Just (Video url) ->
             dialog [ text "[video]" ]
