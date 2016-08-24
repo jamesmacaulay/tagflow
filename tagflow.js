@@ -9646,7 +9646,7 @@ var _jamesmacaulay$tagflow$Main$loginView = function (flags) {
 							]),
 						_elm_lang$core$Native_List.fromArray(
 							[
-								_elm_lang$html$Html$text('log in through instagram')
+								_elm_lang$html$Html$text('Log in through Instagram')
 							]))
 					])),
 				A2(

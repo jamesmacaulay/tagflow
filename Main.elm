@@ -305,7 +305,7 @@ loginView flags =
     dialog
         [ p []
             [ a [ href (authUrl flags.clientId flags.redirectUri) ]
-                [ text "log in through instagram" ]
+                [ text "Log in through Instagram" ]
             ]
         , p [ style [ ( "font-size", "50%" ), ( "color", "#999" ) ] ]
             [ text "This application only ever accesses publicly available Instagram content, and doesn't share usage data with any third parties." ]
